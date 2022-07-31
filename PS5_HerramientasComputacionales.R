@@ -80,6 +80,15 @@ ggplot(df3, aes(x = loan_amnt, fill = grade)) +
 
 
 
+# Hacemos zoom en uno de los gráficos realizados en clase 
+
+install.packages("plotrix")
+library(plotrix)
+
+
+
+facet_zoom(xlim = c(1965, 1985))
+
 
 
 
