@@ -12,9 +12,14 @@
 #########################################
 
 # Definimos los strings para que luego definir el directorio
-main = "/Users/tomaspacheco/Desktop/Herramientas-PS5/Tarea 2"
-input = paste(main, "/input", sep = "")
-output = paste(main, "/output", sep = "")
+main = "C:\\Users\\Abi\\Documents\\GitHub\\Herramientas-PS5"
+input = paste(main, "\\input", sep = "")
+output = paste(main, "\\output", sep = "")
+
+
+#### Mapa con ggplot2 #### 
+
+# Comenzaremos haciendo el mapa con ggplot2
 
 # Importamos las librerías necesarias para hacer el gráfico en ggplot
 
@@ -24,7 +29,7 @@ library(ggplot2)
 library(RColorBrewer)
 library(ggrepel)
 
-# Comenzamos importando el archivo shp
+# Importamos el archivo shp
 setwd(input)
 london_data <- readOGR(dsn = "london_sport.shp")
 
@@ -104,5 +109,59 @@ map1
 setwd(output)
 ggsave(file = "mapa_ggplot.eps", width = 6.5, height = 4, dpi = 300)
 
+
+
+#### Mapa con tmap #### 
+
+# En esta parte haremos el mapa usando la libreria "tmap". La importamos
+
+library(tmap)
+
+# Importamos la data de crimen
+crime_data <- read.csv("mps-recordedcrime-borough.csv",
+                       stringsAsFactors = FALSE)
+
+# Nuevamente solo nos quedamos con los datos de robos
+crime_theft <- crime_data[crime_data$CrimeType == "Theft & Handling", ]
+
+# Calculamos la cantidad de crimenes por barrio
+crime_ag <- aggregate(CrimeCount ~ Borough, FUN = sum, data = crime_theft)
+
+# Mergeamos la base 
+
+head(lnd$name,100) 
+head(crime_ag$Borough,100)
+
+head(left_join(lnd@data, crime_ag)) 
+lnd@data <- left_join(lnd@data, crime_ag, by = c('name' = 'Borough'))
+
+# Creamos la variable de interés
+
+lnd$Crime100 <- lnd$CrimeCount/as.double(lnd$Pop_2001)*1000
+
+# Generamos variable para la leyenda
+
+lnd$label <- as.character(round(lnd$crime100,0))
+
+# Hacemos el mapa
+
+library(tmap) # load tmap package 
+
+qtm(shp = lnd, fill = "Crime100", 
+    fill.title = "Robos cada \n1000 habitantes",
+    fill.palette = "Oranges") +
+  tm_borders() +
+  tm_scale_bar(position= c("left", "bottom"), breaks = c(0,5,10,15),text.size = 0.5) +
+  tm_layout(
+    main.title = "Robos cada 1000 habitantes en cada barrio de Londres", 
+    main.title.position = "center",
+    legend.outside = F, legend.outside.position = "right",
+    legend.position = c("right", "bottom")) +
+    tm_text("label", size = 0.7)
+
+# Exportamos
+
+setwd(output)
+ggsave(file = "mapa_tmap.eps", width = 6.5, height = 4, dpi = 300)
 
 
