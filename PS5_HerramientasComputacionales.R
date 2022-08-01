@@ -27,6 +27,8 @@ colores2 <- c("#f5fa7b", "#3cffb7", "#ffdaaa", "#fa66f3",
 ## Gráfico 1 ##
 
 
+# original 
+
 #Activity B:Using faceting to understand data
 #"Aqu? quiere ver la distribución de las cantidades de los préstamos para diferentes grados de crédito.
 # Objetivo: Trazar el monto del préstamo para diferentes grados de crédito usando el faceting.
@@ -60,7 +62,7 @@ pb4
 #                              colores2[4], colores2[5], colores2[6], colores2[8]))
 
 
-
+# nuevo 
 
 
 ggplot(df3, aes(x = loan_amnt, fill = grade)) + 
@@ -78,21 +80,76 @@ ggplot(df3, aes(x = loan_amnt, fill = grade)) +
 
 ## Gráfico 2 ##
 
+# original 
 
+ggplot(dfs, aes(gdp_per_capita,Electricity_consumption_per_capita,color=Country)) + geom_point() + stat_smooth(method=lm)
+
+
+
+# nuevo 
 
 # Hacemos zoom en uno de los gráficos realizados en clase 
 
-install.packages("plotrix")
-library(plotrix)
+
+library(ggforce)
+library(tidyverse)
 
 
 
-facet_zoom(xlim = c(1965, 1985))
+ggplot(dfs, aes(gdp_per_capita,Electricity_consumption_per_capita,color=Country)) + scale_y_log10()+
+  geom_point() + labs(x = "PBI per cápita", 
+                      y = "Consumo de electricidad per cápita", 
+                      title = "Relación entre consumo de electricidad y PBI",
+                      caption = "Fuente: elaboración propia")+ stat_smooth(method=lm)+facet_zoom(xlim = c(1000, 10000)) + theme_bw() +
+  theme(legend.position = "right", legend.title = element_blank(), 
+            plot.title = element_text(hjust = 0.5)) 
+
+
 
 
 
 
 ## Gráfico 3 ##
+
+# original 
+
+
+
+#Read the data
+df_fb <- read.csv("data/FB.csv")
+df_fb$Date <- as.Date(df_fb$Date)
+#Use strftime to get the month for each date
+df_fb$Month <- strftime(df_fb$Date,"%m")
+df_fb$Month <- as.numeric(df_fb$Month)
+ggplot(df_fb, aes(Month,Close)) + 
+  geom_point(color="red",alpha=1/2,position = position_jitter(h=0.0,w=0.0))+
+  geom_line(stat='summary',fun.y=mean, color="blue",size=1)+
+  scale_x_continuous(breaks=seq(0,13,1))+
+  ggtitle("Monthly Closing Stock Prices: Facebook")+theme_classic()
+
+
+# nuevo creamos una variable para año 
+
+df_fb$Year <- strftime(df_fb$Date,"%y")
+
+# Creamos una variable que tenga el año completo: 
+
+df_fb$Año[df_fb$Year==17]<-"2017"
+
+df_fb$Año[df_fb$Year==18]<-"2018"
+
+
+ggplot(df_fb, aes(Month,Close,color=Año)) + scale_y_log10()+
+  geom_point() + labs(x = "PBI per cápita", 
+                      y = "Consumo de electricidad per cápita", 
+                      title = "Relación entre consumo de electricidad y PBI",
+                      caption = "Fuente: elaboración propia")+ stat_smooth(method=lm)+facet_zoom(xlim = c(1000, 10000)) + theme_bw() +
+  theme(legend.position = "right", legend.title = element_blank(), 
+        plot.title = element_text(hjust = 0.5)) 
+
+
+
+
 
 
 #### Gráficos corregidos ### 
