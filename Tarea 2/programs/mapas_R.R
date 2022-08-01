@@ -1,0 +1,107 @@
+#########################################
+#                                       #
+#     Herramientas computacionales      #
+#         para la investigación         #
+#                                       #
+#       Profesora: Amelia Gibbons       #
+#      Alumnos: Pacheco y Riquelme      #
+#                                       #
+#           MAE UdeSA 2022              #
+#                                       #  
+#               Tarea 2                 #
+#########################################
+
+# Definimos los strings para que luego definir el directorio
+main = "/Users/tomaspacheco/Desktop/Herramientas-PS5/Tarea 2"
+input = paste(main, "/input", sep = "")
+output = paste(main, "/output", sep = "")
+
+# Importamos las librerías necesarias para hacer el gráfico en ggplot
+
+library(rgdal)
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+library(ggrepel)
+
+# Comenzamos importando el archivo shp
+setwd(input)
+london_data <- readOGR(dsn = "london_sport.shp")
+
+# Chequeamos las clases de las variables en una base de datos espacial
+sapply(london_data@data, class)
+
+# Ahora importamos los datos de la cantidad de crímenes
+crime_data <- read.csv("mps-recordedcrime-borough.csv",
+                       stringsAsFactors = FALSE)
+
+# Vemos los tipos de crímenes que hay 
+head(crime_data$CrimeType) 
+
+# Nos quedamos solo con aquellos crímenes que son "Theft & Handling":
+crime_theft <- crime_data[crime_data$CrimeType == "Theft & Handling",]
+
+# Calculamos la suma de los crímenes por robo para cada uno de los distritos:
+crime_ag <- aggregate(CrimeCount ~ Borough, FUN = sum, data = crime_theft)
+
+# Ahora lo que vamos a hacer es juntar los datos
+london_data@data <- left_join(london_data@data, crime_ag, by = c('name' = 'Borough'))
+
+# A los datos espaciales les damos formato de data frame
+lnd_f <- broom::tidy(london_data)
+
+# Ahora tenemos que juntar la información de ambos dfs.
+# Le ponemos un id a cada observación
+london_data$id <- row.names(london_data) 
+
+# Hacemos el merge con la data de crímenes y los polígonos
+lnd_f <- left_join(lnd_f, london_data@data) 
+
+# Tenemos que hacer que la variable sea spatially intensive. Vamos a generar una variable
+# que sea la cantidad de robos cada 1000 habitantes.
+
+lnd_f$crime_spatial<- lnd_f$CrimeCount/as.double(lnd_f$Pop_2001)*1000
+
+# Ya tenemos la variable de interés. Para poner las leyendas de la cantidad de crímenes
+# cada 1000 habitantes, vamos a calcular los centroides de cada uno de los polígonos.
+
+centroids <- as.data.frame(coordinates(london_data))
+centroids$label <- london_data@data$name
+names(centroids) <- c("c.long", "c.lat", "name") 
+
+# Vamos a juntar la base original y la base de centroides en un nuevo df
+# que se llama lnd_f2
+
+lnd_f2 <- merge(centroids, lnd_f, by = c("name"))
+
+# Generamos una nueva variable para las labels dentro del gráfico. Esta será la cantidad
+# de crímenes redondeada.
+lnd_f2$label <- as.character(round(lnd_f2$crime_spatial, 0))
+
+# Para el barrio que no hay datos, le decimos que la label sea "NA"
+lnd_f2$label[is.na(lnd_f2$label)] <- "NA"
+
+# Hacemos el gráfico:
+
+map1 <- ggplot(lnd_f2, aes(long, lat, group = group, fill = crime_spatial)) +
+  geom_polygon() + coord_equal() +
+  geom_path(data = lnd_f2, aes(x = long, y = lat, group = group), 
+            color = "black", size = 0.3) + # Graficamos los polígonos
+  labs(x = "", y = "",
+       fill = "Robos cada \n1000 habitantes") +  # Título de la leyenda 
+  scale_fill_distiller(palette = "YlOrBr", trans = "reverse") + # Colores de la leyenda
+  geom_text(aes(label = label, x = c.long, y = c.lat), size = 2.5) + # Texto con los valores
+  ggtitle("Robos cada 1000 habitantes en cada barrio de Londres") + # Título
+  theme(axis.text = element_blank(), 
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        plot.background = element_rect(fill="white"), # Fondo blanco
+        panel.background=element_blank(), # Fondo blanco
+        plot.title = element_text(hjust = 0.5)) # Centramos el título
+map1
+# Exportamos el mapa
+
+ggsave(file = paste(output, "mapa_ggplot.eps", sep = ""), width = 6.5, height = 4, dpi = 300)
+
+
+
