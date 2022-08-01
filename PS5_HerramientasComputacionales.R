@@ -76,8 +76,7 @@ ggplot(df_fb, aes(Month,Close)) +
   scale_x_continuous(breaks=seq(0,13,1))+
   ggtitle("Monthly Closing Stock Prices: Facebook")+theme_classic()
 
-ggsave(file = "tercergrafico_original.eps", width = 6.5, height = 4, dpi = 300)
-
+# Lo descargamos a mano como PDF
 
 #### Gráficos corregidos ### 
 
