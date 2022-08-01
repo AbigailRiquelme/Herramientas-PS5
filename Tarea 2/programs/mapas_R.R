@@ -101,7 +101,8 @@ map1 <- ggplot(lnd_f2, aes(long, lat, group = group, fill = crime_spatial)) +
 map1
 # Exportamos el mapa
 
-ggsave(file = paste(output, "mapa_ggplot.eps", sep = ""), width = 6.5, height = 4, dpi = 300)
+setwd(output)
+ggsave(file = "mapa_ggplot.eps", width = 6.5, height = 4, dpi = 300)
 
 
 
